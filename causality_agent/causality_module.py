@@ -86,7 +86,7 @@ class CausalityModule(Bioagent):
     def respond_find_causality_target(self, content):
         """Response content to find-causality-target request"""
         target_arg = content.gets('TARGET')
-        rel = content.gets('TYPE')
+        rel = content.gets('TYPE').lower()
 
         if not target_arg:
             return self.make_failure('MISSING_MECHANISM')
@@ -98,13 +98,13 @@ class CausalityModule(Bioagent):
 
 
         rel_map = {
-            "phosphorylation": "phosphorylates",
-            "dephosphorylation": "dephosphorylates",
-            "activate": "upregulates-expression",
-            "increase": "upregulates-expression",
-            "inhibit": "downregulates-expression",
-            "decrease": "downregulates-expression",
-            "modulate": "modulates",
+            "ont::phosphorylation": "phosphorylates",
+            "ont::dephosphorylation": "dephosphorylates",
+            "ont::activate": "upregulates-expression",
+            "ont::increase": "upregulates-expression",
+            "ont::inhibit": "downregulates-expression",
+            "ont::decrease": "downregulates-expression",
+            "ont::modulate": "modulates",
         }
 
         try:
