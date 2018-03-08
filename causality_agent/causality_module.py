@@ -85,7 +85,7 @@ class CausalityModule(Bioagent):
 
     def respond_find_causality_target(self, content):
         """Response content to find-causality-target request"""
-        target_arg = content.gets('TARGET')
+        target_arg = content.gets('SOURCE')
         rel = content.gets('TYPE')
 
         if not target_arg:
@@ -132,7 +132,7 @@ class CausalityModule(Bioagent):
 
     def respond_find_causality_source(self, content):
         """Response content to find-qca-path request"""
-        source_arg = content.gets('SOURCE')
+        source_arg = content.gets('TARGET')
         rel = content.gets('TYPE')
 
         if not source_arg:
