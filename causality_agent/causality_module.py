@@ -97,6 +97,7 @@ class CausalityModule(Bioagent):
         target_name = target_names[0]
 
 
+
         rel_map = {
             "phosphorylation": "phosphorylates",
             "dephosphorylation": "dephosphorylates",
