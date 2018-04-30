@@ -207,7 +207,7 @@ class TestNextCorrelation(_IntegrationTest):
         super(TestNextCorrelation, self).__init__(CausalityModule)
 
     def create_message_01_explainable(self):
-        source = ekb_kstring_from_text('ADAM17')
+        source = ekb_kstring_from_text('AKT1')
         content = KQMLList('DATASET-CORRELATED-ENTITY')
         content.set('source', source)
         msg = get_request(content)
@@ -220,14 +220,14 @@ class TestNextCorrelation(_IntegrationTest):
         explainable = output.gets('explainable')
 
 
-        assert target == 'MAPK1'
-        assert correlation.startswith('0.67')
+        assert target == 'BRAF'
+        assert correlation == str(0.7610843243760473)
         assert explainable == 'explainable'
 
 
     def create_message_02_explainable2(self):
         time.sleep(2)
-        source = ekb_kstring_from_text('ADAM17')
+        source = ekb_kstring_from_text('AKT1')
         content = KQMLList('DATASET-CORRELATED-ENTITY')
         content.set('source', source)
         msg = get_request(content)
@@ -239,14 +239,14 @@ class TestNextCorrelation(_IntegrationTest):
         correlation = output.gets('correlation')
         explainable = output.gets('explainable')
 
-        assert target == 'MAPK14'
-        assert correlation.startswith('0.538')
+        assert target == 'PTPN1'
+        assert correlation.startswith('0.581061418186')
         assert explainable == 'explainable'
 
 
     def create_message_03_unexplainable(self):
         time.sleep(2)
-        source = ekb_kstring_from_text('ADAM17')
+        source = ekb_kstring_from_text('AKT1')
         content = KQMLList('DATASET-CORRELATED-ENTITY')
         content.set('source', source)
         msg = get_request(content)
@@ -257,9 +257,8 @@ class TestNextCorrelation(_IntegrationTest):
         target = output.gets('target')
         correlation = output.gets('correlation')
         explainable = output.gets('explainable')
-
-        assert target == 'TRMT2A'
-        assert correlation.startswith('0.948')
+        assert target == 'AGPS'
+        assert correlation.startswith('0.94999636806')
         assert explainable == 'unexplainable'
         time.sleep(1)
 
@@ -275,7 +274,7 @@ class TestNextCorrelation(_IntegrationTest):
 
     def create_message_05_explainable_again(self):
         time.sleep(2)
-        source = ekb_kstring_from_text('ADAM17')
+        source = ekb_kstring_from_text('AKT1')
         content = KQMLList('DATASET-CORRELATED-ENTITY')
         content.set('source', source)
         msg = get_request(content)
@@ -286,8 +285,8 @@ class TestNextCorrelation(_IntegrationTest):
         target = output.gets('target')
         correlation = output.gets('correlation')
         explainable = output.gets('explainable')
-        assert target == 'MAPK1'
-        assert correlation.startswith('0.67')
+        assert target == 'BRAF'
+        assert correlation.startswith('0.7610843243760473')
         assert explainable == 'explainable'
 
     def create_message_failure(self):
@@ -302,6 +301,7 @@ class TestNextCorrelation(_IntegrationTest):
         assert output.head() == 'FAILURE', output
         reason = output.gets('reason')
         assert reason == "NO_PATH_FOUND"
+
 
 
 
