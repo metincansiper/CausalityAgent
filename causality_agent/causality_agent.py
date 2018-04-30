@@ -181,12 +181,11 @@ class CausalityAgent:
         with self.cadb:
             cur = self.cadb.cursor()
 
-            causal_rows = cur.execute("SELECT * FROM Explained_Correlations WHERE Id1 = ? OR Id2 = ? "
-                                      "ORDER BY ABS(Corr) DESC",
-                                      (gene, gene)).fetchall()
-
+            causal_rows = cur.execute("SELECT * FROM Explained_Correlations "
+                                      "WHERE Id1 = ? OR Id2 = ? ORDER BY ABS(Corr) DESC", (gene, gene)).fetchall()
 
             row_cnt = len(causal_rows)
+
             if row_cnt > self.causality_ind:
                 row = causal_rows[self.causality_ind]
                 self.causality_ind = self.causality_ind + 1

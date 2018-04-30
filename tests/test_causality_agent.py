@@ -108,9 +108,9 @@ class TestCausalityTarget(_IntegrationTest):
         super(TestCausalityTarget, self).__init__(CausalityModule)
 
     def create_message(self):
-        target = ekb_kstring_from_text('MAPK1')
+        source = ekb_kstring_from_text('MAPK1')
         content = KQMLList('FIND-CAUSALITY-TARGET')
-        content.set('target', target)
+        content.set('source', source)
         content.sets('type', 'phosphorylation')
         msg = get_request(content)
         return msg, content
@@ -126,9 +126,9 @@ class TestCausalityTarget(_IntegrationTest):
         assert stmts[0].position == '65'
 
     def create_message_failure(self):
-        target = ekb_kstring_from_text('MAPK1')
+        source = ekb_kstring_from_text('MAPK1')
         content = KQMLList('FIND-CAUSALITY-TARGET')
-        content.set('target', target)
+        content.set('source', source)
         content.sets('type', 'activation')
         msg = get_request(content)
         return msg, content
@@ -157,9 +157,9 @@ class TestCausalitySource(_IntegrationTest):
         super(TestCausalitySource, self).__init__(CausalityModule)
 
     def create_message(self):
-        source = ekb_kstring_from_text('BRAF')
+        target = ekb_kstring_from_text('BRAF')
         content = KQMLList('FIND-CAUSALITY-SOURCE')
-        content.set('source', source)
+        content.set('target', target)
         content.sets('type', 'phosphorylation')
         msg = get_request(content)
         return msg, content
@@ -176,9 +176,9 @@ class TestCausalitySource(_IntegrationTest):
         assert stmts[0].position == '151'
 
     def create_message_failure(self):
-        source = ekb_kstring_from_text('BRAF')
+        target = ekb_kstring_from_text('BRAF')
         content = KQMLList('FIND-CAUSALITY-SOURCE')
-        content.set('source', source)
+        content.set('target', target)
         content.sets('type', 'phosphorylates')
         msg = get_request(content)
         return msg, content
@@ -207,85 +207,87 @@ class TestNextCorrelation(_IntegrationTest):
         super(TestNextCorrelation, self).__init__(CausalityModule)
 
     def create_message_01_explainable(self):
-        source = ekb_kstring_from_text('AKT1')
+        source = ekb_kstring_from_text('ADAM17')
         content = KQMLList('DATASET-CORRELATED-ENTITY')
         content.set('source', source)
         msg = get_request(content)
         return msg, content
 
-    def check_response_to_message__01_explainable(self, output):
+    def check_response_to_message_01_explainable(self, output):
         assert output.head() == 'SUCCESS', output
         target = output.gets('target')
         correlation = output.gets('correlation')
         explainable = output.gets('explainable')
 
-        assert target == 'BRAF'
-        assert correlation == str(0.7610843243760473)
+
+        assert target == 'MAPK1'
+        assert correlation.startswith('0.67')
         assert explainable == 'explainable'
 
 
-    def create_message__02_explainable2(self):
+    def create_message_02_explainable2(self):
         time.sleep(2)
-        source = ekb_kstring_from_text('AKT1')
+        source = ekb_kstring_from_text('ADAM17')
         content = KQMLList('DATASET-CORRELATED-ENTITY')
         content.set('source', source)
         msg = get_request(content)
         return msg, content
 
-    def check_response_to_message__02_explainable2(self, output):
+    def check_response_to_message_02_explainable2(self, output):
         assert output.head() == 'SUCCESS', output
         target = output.gets('target')
         correlation = output.gets('correlation')
         explainable = output.gets('explainable')
 
-        assert target == 'PTPN1'
-        assert correlation.startswith('0.581061418186')
+        assert target == 'MAPK14'
+        assert correlation.startswith('0.538')
         assert explainable == 'explainable'
 
 
-    def create_message__03_unexplainable(self):
+    def create_message_03_unexplainable(self):
         time.sleep(2)
-        source = ekb_kstring_from_text('AKT1')
+        source = ekb_kstring_from_text('ADAM17')
         content = KQMLList('DATASET-CORRELATED-ENTITY')
         content.set('source', source)
         msg = get_request(content)
         return msg, content
 
-    def check_response_to_message__03_unexplainable(self, output):
+    def check_response_to_message_03_unexplainable(self, output):
         assert output.head() == 'SUCCESS', output
         target = output.gets('target')
         correlation = output.gets('correlation')
         explainable = output.gets('explainable')
-        assert target == 'AGPS'
-        assert correlation.startswith('0.94999636806')
+
+        assert target == 'TRMT2A'
+        assert correlation.startswith('0.948')
         assert explainable == 'unexplainable'
         time.sleep(1)
 
-    def create_message__04_reset(self):
+    def create_message_04_reset(self):
         time.sleep(2)
         content = KQMLList('RESET-CAUSALITY-INDICES')
         msg = get_request(content)
         return msg, content
 
-    def check_response_to_message__04_reset(self, output):
+    def check_response_to_message_04_reset(self, output):
         assert output.head() == 'SUCCESS', output
 
 
-    def create_message__05_explainable_again(self):
+    def create_message_05_explainable_again(self):
         time.sleep(2)
-        source = ekb_kstring_from_text('AKT1')
+        source = ekb_kstring_from_text('ADAM17')
         content = KQMLList('DATASET-CORRELATED-ENTITY')
         content.set('source', source)
         msg = get_request(content)
         return msg, content
 
-    def check_response_to_message__05_explainable_again(self, output):
+    def check_response_to_message_05_explainable_again(self, output):
         assert output.head() == 'SUCCESS', output
         target = output.gets('target')
         correlation = output.gets('correlation')
         explainable = output.gets('explainable')
-        assert target == 'BRAF'
-        assert correlation.startswith('0.7610843243760473')
+        assert target == 'MAPK1'
+        assert correlation.startswith('0.67')
         assert explainable == 'explainable'
 
     def create_message_failure(self):
