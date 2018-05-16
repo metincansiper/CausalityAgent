@@ -37,6 +37,7 @@ class DatabaseInitializer:
         self.populate_sif_relations_table(path)
         self.populate_mutex_table(path)
         self.populate_tcga_names_table(path)
+        self.populate_cellular_components_table(path)
 
     def populate_causality_table(self, path):
         """
@@ -321,3 +322,31 @@ class DatabaseInitializer:
                                 (str(row[0]).lower(), str(row[1].rstrip('\n'))))
 
 
+    def populate_cellular_components_table(self, path):
+        """
+        Fills the subcellular locations and the gene symbols table
+        :param path: Path to the folder that keeps c5.cc.v6.1.symbols.gmt
+        :return:
+        """
+        try:
+            location_path = os.path.join(path, 'c5.cc.v6.1.symbols.gmt')
+        except Exception as e:
+            raise BioagentException.PathNotFoundException()
+
+        location_file = open(location_path, 'r')
+
+        with self.cadb:
+            cur = self.cadb.cursor()
+            cur.execute("DROP TABLE IF EXISTS CellularComponents")
+            cur.execute("CREATE TABLE CellularComponents(Gene TEXT, Component TEXT)")
+
+            for line in location_file:
+                vals = line.split('\t')
+                loc = vals[0]
+
+                for i in range(2, len(vals)):
+                    gene = vals[i]
+                    cur.execute("INSERT INTO CellularComponents VALUES(?, ?)",
+                                (gene, loc))
+
+        location_file.close()

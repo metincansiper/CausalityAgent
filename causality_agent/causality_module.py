@@ -21,7 +21,7 @@ class CausalityModule(Bioagent):
              'FIND-CAUSALITY-SOURCE',
              'DATASET-CORRELATED-ENTITY', 'FIND-COMMON-UPSTREAMS',
              'RESTART-CAUSALITY-INDICES', 'FIND-MUTEX', 'FIND-MUTATION-SIGNIFICANCE',
-             'RESET-CAUSALITY-INDICES']
+             'RESET-CAUSALITY-INDICES',  'FIND-CELLULAR-LOCATION-FROM-NAMES', 'FIND-CELLULAR-LOCATION']
 
     def __init__(self, **kwargs):
         self.CA = CausalityAgent(_resource_dir)
@@ -40,9 +40,7 @@ class CausalityModule(Bioagent):
         target_arg = content.gets('TARGET')
         direction = content.gets('DIRECTION')
 
-        if not source_arg:
-            return self.make_failure('MISSING_MECHANISM')
-        if not target_arg:
+        if not source_arg or not target_arg:
             return self.make_failure('MISSING_MECHANISM')
 
         target_names = _get_term_names(target_arg)
@@ -320,6 +318,66 @@ class CausalityModule(Bioagent):
 
         return reply
 
+    def respond_find_cellular_location_from_names(self, content):
+        """Response content to find-cellular-location-from-names request where genes are given as a list of names
+        """
+
+        gene_names = content.get('GENES')
+
+        if not gene_names:
+            return self.make_failure('MISSING_MECHANISM')
+
+        if isinstance(gene_names, str):
+            return self.make_failure('INVALID_FORMAT')
+
+        gene_list = []
+        for gene_name in gene_names:
+            gene_list.append(str(gene_name))
+
+        result = self.CA.find_most_likely_cellular_location(gene_list)
+
+        if not result:
+            return self.make_failure('MISSING_MECHANISM')
+
+        reply = KQMLList('SUCCESS')
+
+        components = KQMLList()
+        for r in result:
+            components.append(r)
+        reply.set('components', components)
+
+        return reply
+
+    def respond_find_cellular_location(self, content):
+        """Response content to find-cellular-location request"""
+        genes_arg = content.gets('GENES')
+
+        if not genes_arg:
+            return self.make_failure('MISSING_MECHANISM')
+
+        gene_names = _get_term_names(genes_arg)
+
+        if not gene_names:
+            return self.make_failure('MISSING_MECHANISM')
+
+        gene_list = []
+        for gene_name in gene_names:
+            gene_list.append(str(gene_name))
+
+        result = self.CA.find_most_likely_cellular_location(gene_list)
+
+        if not result:
+            return self.make_failure('MISSING_MECHANISM')
+
+        reply = KQMLList('SUCCESS')
+
+        components = KQMLList()
+        for r in result:
+            components.append(r)
+        reply.set('components', components)
+
+        return reply
+
 
 def _get_term_names(term_str):
     """Given an ekb-xml returns the names of genes in a list"""
@@ -346,7 +404,6 @@ def _get_term_names(term_str):
         return None
 
     return agent_names
-
 
 
 def make_indra_json(causality):

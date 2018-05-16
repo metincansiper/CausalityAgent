@@ -341,6 +341,53 @@ class CausalityAgent:
 
             return upstream_list
 
+    def find_cellular_location(self, gene):
+        """
+        Find subcellular location of the gene
+        :param gene:
+        :return:
+        """
+
+        with self.cadb:
+            cur = self.cadb.cursor()
+
+            location = cur.execute("SELECT Component FROM CellularComponents WHERE Gene = ?", (gene,)).fetchall()
+
+        return location
+
+    def find_most_likely_cellular_location(self, genes):
+        """
+        Given a set of gene names, find the most likely cell location
+        :param genes:
+        :return:
+        """
+
+        loc_names = {}
+        max_loc_names = []
+        with self.cadb:
+            cur = self.cadb.cursor()
+
+            max_loc_cnt = 0
+            max_loc_name = ""
+            for gene in genes:
+
+                locations = cur.execute("SELECT Component FROM CellularComponents WHERE Gene = ?",
+                                        (gene,)).fetchall()
+                for location in locations:
+                    if (location in loc_names):
+                        loc_names[location[0]] += 1
+                    else:
+                        loc_names[location[0]] = 1
+                    if loc_names[location[0]] >= max_loc_cnt:
+                        max_loc_cnt = loc_names[location[0]]
+
+            # format locations
+            for location in locations:
+                if loc_names[location[0]] == max_loc_cnt:
+                    max_loc_names.append(location[0])
+                    # max_loc_names.append(str(location[0]).encode('utf8'))
+
+        return max_loc_names
 
 # ca = CausalityAgent('./resources')
 # print(ca.find_causality({'source': {'id':'KRAS'}, 'target': {'id': 'MAPK3'}}))

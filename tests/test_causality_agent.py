@@ -434,4 +434,31 @@ class TestMutSig(_IntegrationTest):
         reason = output.gets('reason')
         assert reason == "MISSING_MECHANISM"
 
+class TestCellularLocation(_IntegrationTest):
+    def __init__(self, *args):
+        super(TestCellularLocation, self).__init__(CausalityModule)
 
+    def create_message_AKT1(self):
+        content = KQMLList('FIND-CELLULAR-LOCATION')
+        genes = ekb_from_text('AKT1')
+        content.sets('genes', str(genes))
+
+        msg = get_request(content)
+        return msg, content
+
+    def check_response_to_message_AKT1(self, output):
+        assert output.head() == 'SUCCESS', output
+        components = output.get('components')
+        assert 'GO_SYNAPSE' in components
+
+    def create_message_2(self):
+        content = KQMLList('FIND-CELLULAR-LOCATION-FROM-NAMES')
+        content.set('genes', ['AKT1', 'BRAF'])
+
+        msg = get_request(content)
+        return msg, content
+
+    def check_response_to_message_2(self, output):
+        assert output.head() == 'SUCCESS', output
+        components = output.get('components')
+        assert 'GO_NEURON_PART' in components
