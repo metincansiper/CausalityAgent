@@ -21,7 +21,7 @@ class CausalityModule(Bioagent):
              'FIND-CAUSALITY-SOURCE',
              'DATASET-CORRELATED-ENTITY', 'FIND-COMMON-UPSTREAMS',
              'RESTART-CAUSALITY-INDICES', 'FIND-MUTEX', 'FIND-MUTATION-SIGNIFICANCE',
-             'RESET-CAUSALITY-INDICES',  'FIND-CELLULAR-LOCATION-FROM-NAMES', 'FIND-CELLULAR-LOCATION']
+             'RESET-CAUSALITY-INDICES',  'FIND-CELLULAR-LOCATION-FROM-NAMES', 'FIND-CELLULAR-LOCATION', 'FIND-COMMON-CELLULAR-LOCATION']
 
     def __init__(self, **kwargs):
         self.CA = CausalityAgent(_resource_dir)
@@ -315,6 +315,47 @@ class CausalityModule(Bioagent):
             # mutex.append(groups)
 
         reply.set('mutex', mutex)
+
+        return reply
+
+    def respond_find_common_cellular_location(self, content):
+        """Response content to find-cellular-location request where genes are given as two lists of agent and affected
+        """
+
+        genes_arg1 = content.gets('AGENT')
+        genes_arg2 = content.gets('AFFECTED')
+
+        if not genes_arg1 or not genes_arg2:
+            return self.make_failure('MISSING_MECHANISM')
+
+        gene_names1 = _get_term_names(genes_arg1)
+        gene_names2 = _get_term_names(genes_arg2)
+
+        if not gene_names1 or not gene_names2:
+            return self.make_failure('MISSING_MECHANISM')
+
+        gene_list = [str(gene_name) for gene_name in gene_names1] + [str(gene_name) for gene_name in gene_names2]
+        # for gene_name in gene_names1:
+        #     gene_list.append(str(gene_name))
+
+        result = self.CA.find_most_likely_cellular_location(gene_list)
+
+        if not result:
+            return self.make_failure('MISSING_MECHANISM')
+
+        reply = KQMLList('SUCCESS')
+
+        components = KQMLList()
+        for r in result:
+            components.append(r)
+        reply.set('components', components)
+
+
+        gene_list_kqml = KQMLList()
+        for gene in gene_list:
+            gene_list_kqml.append(gene)
+
+        reply.set('genes', gene_list_kqml)
 
         return reply
 

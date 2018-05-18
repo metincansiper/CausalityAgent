@@ -462,3 +462,22 @@ class TestCellularLocation(_IntegrationTest):
         assert output.head() == 'SUCCESS', output
         components = output.get('components')
         assert 'GO_NEURON_PART' in components
+
+    def create_message_3(self):
+        content = KQMLList('FIND-COMMON-CELLULAR-LOCATION')
+        agent = ekb_from_text('AKT1, MAPK1')
+        content.sets('agent', str(agent))
+
+        affected = ekb_from_text('BRAF')
+        content.sets('affected', str(affected))
+
+
+        msg = get_request(content)
+        return msg, content
+
+    def check_response_to_message_3(self, output):
+        assert output.head() == 'SUCCESS', output
+        components = output.get('components')
+        genes = output.get('genes')
+        assert 'GO_NEURON_PART' in components
+        assert 'AKT1' in genes
