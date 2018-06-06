@@ -115,7 +115,7 @@ class CausalityModule(Bioagent):
         result = self.CA.find_causality_targets(target)
 
         if not result:
-            return self.make_failure('MISSING_MECHANISM')
+            return self.make_failure('NO_PATH_FOUND')
 
         # Send PC links to provenance tab
         # Multiple interactions are sent separately
@@ -162,7 +162,7 @@ class CausalityModule(Bioagent):
         result = self.CA.find_causality_targets(source)
 
         if not result:
-            return self.make_failure('MISSING_MECHANISM')
+            return self.make_failure('NO_PATH_FOUND')
 
         # Multiple interactions are sent separately
         for r in result:
@@ -265,7 +265,7 @@ class CausalityModule(Bioagent):
         return reply
 
     def respond_find_mutex(self, content):
-        """Response content to find-mutation-significance request"""
+        """Response content to find-mutex request"""
 
         gene_arg = content.gets('GENE')
 

@@ -384,7 +384,8 @@ class CausalityAgent:
             # format locations
             for location in locations:
                 if loc_names[location[0]] == max_loc_cnt:
-                    max_loc_names.append(location[0])
+                    loc_name = str.strip(location[0], 'GO_')
+                    max_loc_names.append(loc_name)
                     # max_loc_names.append(str(location[0]).encode('utf8'))
 
         return max_loc_names
