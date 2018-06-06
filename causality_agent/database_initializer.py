@@ -2,9 +2,9 @@ import os
 import sqlite3
 from bioagents import BioagentException
 import csv
-import aql
-conn = aql.Connection('http://bmeg.io')
-O = conn.graph("bmeg")
+# import aql
+# conn = aql.Connection('http://bmeg.io')
+# O = conn.graph("bmeg")
 
 
 tcga_study_names = ['ACC', 'BLCA', 'BRCA', 'CESC','CHOL', 'COAD', 'COADREAD', 'DLBC', 'GBM', 'GBMLGG', 'HNSC',
