@@ -2,9 +2,9 @@ import os
 import sqlite3
 from bioagents import BioagentException
 import csv
-# import aql
-# conn = aql.Connection('http://bmeg.io')
-# O = conn.graph("bmeg")
+import aql
+conn = aql.Connection('http://bmeg.io')
+O = conn.graph("bmeg")
 
 
 tcga_study_names = ['ACC', 'BLCA', 'BRCA', 'CESC','CHOL', 'COAD', 'COADREAD', 'DLBC', 'GBM', 'GBMLGG', 'HNSC',
@@ -21,36 +21,56 @@ class DatabaseInitializer:
     def __init__(self, path):
         db_file = os.path.join(path, 'pnnl-dataset.db')
 
-        # self.alternative_mutsig()
-
-        if os.path.isfile(db_file):
-            self.cadb = sqlite3.connect(db_file)
-        else:
-            # create table if it doesn't exist
-            fp = open(db_file, 'w')
-            fp.close()
-            self.cadb = sqlite3.connect(db_file)
-            self.populate_tables(path)
+        self.mutation_frequency('TP53', 'LUAD')
+        #
+        # if os.path.isfile(db_file):
+        #     self.cadb = sqlite3.connect(db_file)
+        # else:
+        #     # create table if it doesn't exist
+        #     fp = open(db_file, 'w')
+        #     fp.close()
+        #     self.cadb = sqlite3.connect(db_file)
+        #     self.populate_tables(path)
 
 
     def __del__(self):
-        self.cadb.close()
+        return
+        # self.cadb.close()
 
 
-    # def alternative_mutsig(self):
-    #
-    #     q = O.query().V().where(aql.eq("_label", "Individual"))
-    #
-    #     # q = q.where(aql.and_(aql.eq("source", "tcga")))  #.render({"disease_code": "_disease_code"}),
-    #
-    #     q = q.where(aql.and_(aql.eq("source", "tcga"), aql.in_("disease_code", tcga_study_names))).render({"id": "_gid"})
-    #
-    #     for r in q:
-    #         print(r.id)
-    #
-    #     # for code in tcga_study_names:
-    #     #     q = q.where(aql.and_(aql.eq("source", "tcga"), aql.eq("disease_code", code)))  # .render({"id":"_gid"})
-    #     #     print(list(q))
+    def mutation_frequency(self, gene, disease):
+
+
+
+        q = O.query().V().where(aql.eq("_label", "Biosample"))
+
+        q = q.where(aql.and_(aql.eq("source", "tcga"), aql.eq("disease_code", disease))).render({"id": "_gid"})
+        all_samples = []
+        for row in q:
+            all_samples.append(row.id)
+
+        if len(all_samples) == 0:
+            return 0
+        gene_id = 0
+        for i in O.query().V().where(aql.eq("_label", "Gene")).where(aql.eq("symbol", gene)):
+            gene_id = i.gid
+
+
+        mut_samples = []
+
+        # get TCGA samples with mutation
+
+        for i in O.query().V(gene_id).in_("variantIn").out("variantCall").out("callSetOf").where(aql.in_("_gid", all_samples)).render({"gid": "_gid"}):
+            mut_samples.append(i.gid)
+        #
+
+
+        freq = (float(len(mut_samples)) / float(len(all_samples)))
+        print(freq)
+
+        return freq
+
+
 
     def populate_tables(self, path):
         """
@@ -388,6 +408,6 @@ class DatabaseInitializer:
     #
     #         print(locations)
 #
-# db = DatabaseInitializer(os.path.dirname(os.path.realpath(__file__)) + '/resources/')
+db = DatabaseInitializer(os.path.dirname(os.path.realpath(__file__)) + '/resources/')
 #
 # db.get_unique_cellular_components()
