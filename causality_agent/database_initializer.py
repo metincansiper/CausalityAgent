@@ -11,6 +11,9 @@ tcga_study_names = ['ACC', 'BLCA', 'BRCA', 'CESC','CHOL', 'COAD', 'COADREAD', 'D
                     'KICH', 'KIPAN','KIRC', 'KIRP', 'LAML', 'LGG', 'LIHC', 'LUAD', 'LUSC', 'OV', 'PAAD', 'PCPG',
                     'PRAD', 'READ', 'SARC', 'SKCM', 'STAD', 'STES', 'TGCT', 'THCA', 'UCEC', 'UCS', 'UVM']
 
+loc_list = ['GO_ENDOPLASMIC_RETICULUM', 'GO_EXTRACELLULAR_MATRIX', 'GO_MITOCHONDRION','GO_ENVELOPE', 'GO_NUCLEOID',
+            'GO_NUCLEAR_OUTER_MEMBRANE', 'GO_CYTOPLASMIC_REGION', 'GO_ENDOLYSOSOME', 'GO_CYTOSKELETON',
+            'GO_LATERAL_PLASMA_MEMBRANE', 'GO_CELL_CORTEX', 'GO_CELL_BODY', 'GO_ENDOSOME']
 
 class DatabaseInitializer:
     """ Fills the pnnl database from the given data files"""
@@ -372,9 +375,19 @@ class DatabaseInitializer:
 
                 for i in range(2, len(vals)):
                     gene = vals[i]
-                    cur.execute("INSERT INTO CellularComponents VALUES(?, ?)",
-                                (gene, loc))
+                    if loc in loc_list:
+                        cur.execute("INSERT INTO CellularComponents VALUES(?, ?)",
+                                    (gene, loc))
 
         location_file.close()
 
+    # def get_unique_cellular_components(self):
+    #     with self.cadb:
+    #         cur = self.cadb.cursor()
+    #         locations = cur.execute("SELECT DISTINCT Component FROM CellularComponents",).fetchall()
+    #
+    #         print(locations)
+#
 # db = DatabaseInitializer(os.path.dirname(os.path.realpath(__file__)) + '/resources/')
+#
+# db.get_unique_cellular_components()

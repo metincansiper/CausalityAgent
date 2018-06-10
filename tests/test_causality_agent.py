@@ -449,11 +449,11 @@ class TestCellularLocation(_IntegrationTest):
     def check_response_to_message_AKT1(self, output):
         assert output.head() == 'SUCCESS', output
         components = output.get('components')
-        assert 'SYNAPSE' in components
+        assert 'mitochondrion' in components
 
     def create_message_2(self):
         content = KQMLList('FIND-CELLULAR-LOCATION-FROM-NAMES')
-        content.set('genes', ['AKT1', 'BRAF'])
+        content.set('genes', ['AKT1', 'MAPK1'])
 
         msg = get_request(content)
         return msg, content
@@ -461,7 +461,7 @@ class TestCellularLocation(_IntegrationTest):
     def check_response_to_message_2(self, output):
         assert output.head() == 'SUCCESS', output
         components = output.get('components')
-        assert 'NEURON_PART' in components
+        assert 'mitochondrion' in components
 
     def create_message_3(self):
         content = KQMLList('FIND-COMMON-CELLULAR-LOCATION')
@@ -479,5 +479,5 @@ class TestCellularLocation(_IntegrationTest):
         assert output.head() == 'SUCCESS', output
         components = output.get('components')
         genes = output.get('genes')
-        assert 'NEURON_PART' in components
+        assert 'mitochondrion' in components
         assert 'AKT1' in genes

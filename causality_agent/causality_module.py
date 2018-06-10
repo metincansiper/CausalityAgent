@@ -21,7 +21,7 @@ class CausalityModule(Bioagent):
              'FIND-CAUSALITY-SOURCE',
              'DATASET-CORRELATED-ENTITY', 'FIND-COMMON-UPSTREAMS',
              'RESTART-CAUSALITY-INDICES', 'FIND-MUTEX', 'FIND-MUTATION-SIGNIFICANCE',
-             'RESET-CAUSALITY-INDICES',  'FIND-CELLULAR-LOCATION-FROM-NAMES', 'FIND-CELLULAR-LOCATION', 'FIND-COMMON-CELLULAR-LOCATION']
+             'RESET-CAUSALITY-INDICES',  'FIND-CELLULAR-LOCATION-FROM-NAMES', 'FIND-CELLULAR-LOCATION-FROM-NAMES', 'FIND-CELLULAR-LOCATION', 'FIND-COMMON-CELLULAR-LOCATION']
 
     def __init__(self, **kwargs):
         self.CA = CausalityAgent(_resource_dir)
@@ -360,6 +360,37 @@ class CausalityModule(Bioagent):
         return reply
 
     def respond_find_cellular_location_from_names(self, content):
+        """Response content to find-cellular-location-from-names request where genes are given as a list of names
+        """
+
+        gene_names = content.get('GENES')
+
+        if not gene_names:
+            return self.make_failure('MISSING_MECHANISM')
+
+        if isinstance(gene_names, str):
+            return self.make_failure('INVALID_FORMAT')
+
+        gene_list = []
+        for gene_name in gene_names:
+            gene_list.append(str(gene_name))
+
+        result = self.CA.find_most_likely_cellular_location(gene_list)
+
+        if not result:
+            return self.make_failure('MISSING_MECHANISM')
+
+        reply = KQMLList('SUCCESS')
+
+        components = KQMLList()
+        for r in result:
+            components.append(r)
+        reply.set('components', components)
+
+        return reply
+
+
+    def respond_find_cellular_location_from_model_json(self, content):
         """Response content to find-cellular-location-from-names request where genes are given as a list of names
         """
 
