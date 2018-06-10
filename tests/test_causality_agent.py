@@ -481,3 +481,22 @@ class TestCellularLocation(_IntegrationTest):
         genes = output.get('genes')
         assert 'mitochondrion' in components
         assert 'AKT1' in genes
+
+class TestMutFreq(_IntegrationTest):
+    def __init__(self, *args):
+        super(TestMutFreq, self).__init__(CausalityModule)
+
+    def create_message_OV(self):
+        content = KQMLList('FIND-MUTATION-FREQUENCY')
+        gene = ekb_kstring_from_text('TP53')
+        disease = ekb_from_text('Ovarian serous cystadenocarcinoma')
+        content.set('gene', gene)
+        content.set('disease', disease)
+
+        msg = get_request(content)
+        return msg, content
+
+    def check_response_to_message_OV(self, output):
+        assert output.head() == 'SUCCESS', output
+        mut_freq = output.gets('mutfreq')
+        assert mut_freq.startswith('0.81')

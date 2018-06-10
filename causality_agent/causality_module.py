@@ -21,7 +21,8 @@ class CausalityModule(Bioagent):
              'FIND-CAUSALITY-SOURCE',
              'DATASET-CORRELATED-ENTITY', 'FIND-COMMON-UPSTREAMS',
              'RESTART-CAUSALITY-INDICES', 'FIND-MUTEX', 'FIND-MUTATION-SIGNIFICANCE',
-             'RESET-CAUSALITY-INDICES',  'FIND-CELLULAR-LOCATION-FROM-NAMES', 'FIND-CELLULAR-LOCATION-FROM-NAMES', 'FIND-CELLULAR-LOCATION', 'FIND-COMMON-CELLULAR-LOCATION']
+             'RESET-CAUSALITY-INDICES',  'FIND-CELLULAR-LOCATION-FROM-NAMES', 'FIND-CELLULAR-LOCATION-FROM-NAMES',
+             'FIND-CELLULAR-LOCATION', 'FIND-COMMON-CELLULAR-LOCATION', 'FIND-MUTATION-FREQUENCY']
 
     def __init__(self, **kwargs):
         self.CA = CausalityAgent(_resource_dir)
@@ -447,6 +448,41 @@ class CausalityModule(Bioagent):
         for r in result:
             components.append(r)
         reply.set('components', components)
+
+        return reply
+
+    def respond_find_mutation_frequency(self, content):
+        """Response content to find-mutation-frequency request"""
+        gene_arg = content.gets('GENE')
+
+        if not gene_arg:
+            self.make_failure('MISSING_MECHANISM')
+
+        gene_names = _get_term_names(gene_arg)
+        if not gene_names:
+            return self.make_failure('MISSING_MECHANISM')
+        gene_name = gene_names[0]
+
+        disease_arg = content.gets('DISEASE')
+        if not disease_arg:
+            return self.make_failure('MISSING_MECHANISM')
+
+        disease_names = _get_term_names(disease_arg)
+        if not disease_names:
+            return self.make_failure('INVALID_DISEASE')
+
+        disease_name = disease_names[0].replace("-", " ").lower()
+        disease_abbr = self.CA.get_tcga_abbr(disease_name)
+        if disease_abbr is None:
+            return self.make_failure('INVALID_DISEASE')
+
+        result = self.CA.find_mutation_frequency(gene_name, disease_abbr)
+
+        if not result:
+            return self.make_failure('MISSING_MECHANISM')
+
+        reply = KQMLList('SUCCESS')
+        reply.sets('mutfreq', result)
 
         return reply
 

@@ -1,5 +1,8 @@
 import re
 from .database_initializer import DatabaseInitializer
+import aql
+conn = aql.Connection('http://bmeg.io')
+O = conn.graph("bmeg")
 
 
 class CausalityAgent:
@@ -389,6 +392,34 @@ class CausalityAgent:
                     # max_loc_names.append(str(location[0]).encode('utf8'))
 
         return max_loc_names
+
+    def find_mutation_frequency(self, gene, disease):
+
+        q = O.query().V().where(aql.eq("_label", "Biosample"))
+
+        q = q.where(aql.and_(aql.eq("source", "tcga"), aql.eq("disease_code", disease))).render({"id": "_gid"})
+        all_samples = []
+        for row in q:
+            all_samples.append(row.id)
+
+        if len(all_samples) == 0:
+            return 0
+        gene_id = 0
+        for i in O.query().V().where(aql.eq("_label", "Gene")).where(aql.eq("symbol", gene)):
+            gene_id = i.gid
+
+        mut_samples = []
+
+        # get TCGA samples with mutation
+
+        for i in O.query().V(gene_id).in_("variantIn").out("variantCall").out("callSetOf").where(
+                aql.in_("_gid", all_samples)).render({"gid": "_gid"}):
+            mut_samples.append(i.gid)
+        #
+
+        freq = (float(len(mut_samples)) / float(len(all_samples))) * 100
+
+        return freq
 
 # ca = CausalityAgent('./resources')
 # print(ca.find_causality({'source': {'id':'KRAS'}, 'target': {'id': 'MAPK3'}}))
