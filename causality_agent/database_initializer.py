@@ -21,21 +21,20 @@ class DatabaseInitializer:
     def __init__(self, path):
         db_file = os.path.join(path, 'pnnl-dataset.db')
 
-        self.mutation_frequency('TP53', 'LUAD')
-        #
-        # if os.path.isfile(db_file):
-        #     self.cadb = sqlite3.connect(db_file)
-        # else:
-        #     # create table if it doesn't exist
-        #     fp = open(db_file, 'w')
-        #     fp.close()
-        #     self.cadb = sqlite3.connect(db_file)
-        #     self.populate_tables(path)
+
+        if os.path.isfile(db_file):
+            self.cadb = sqlite3.connect(db_file)
+        else:
+            # create table if it doesn't exist
+            fp = open(db_file, 'w')
+            fp.close()
+            self.cadb = sqlite3.connect(db_file)
+            self.populate_tables(path)
 
 
     def __del__(self):
         return
-        # self.cadb.close()
+        self.cadb.close()
 
 
     def mutation_frequency(self, gene, disease):
@@ -66,7 +65,6 @@ class DatabaseInitializer:
 
 
         freq = (float(len(mut_samples)) / float(len(all_samples)))
-        print(freq)
 
         return freq
 
@@ -408,6 +406,7 @@ class DatabaseInitializer:
     #
     #         print(locations)
 #
-db = DatabaseInitializer(os.path.dirname(os.path.realpath(__file__)) + '/resources/')
+# db = DatabaseInitializer(os.path.dirname(os.path.realpath(__file__)) + '/resources/')
 #
-# db.get_unique_cellular_components()
+# print(db.mutation_frequency('TP53', 'LUAD'))
+
