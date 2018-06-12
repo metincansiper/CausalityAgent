@@ -331,7 +331,7 @@ class TestCommonUpstreams(_IntegrationTest):
     def check_response_to_message_failure(self, output):
         assert output.head() == 'FAILURE', output
         reason = output.gets('reason')
-        assert reason == "MISSING_MECHANISM"
+        assert reason == "NO_UPSTREAM_FOUND"
 
 
 class TestMutex(_IntegrationTest):
@@ -464,13 +464,9 @@ class TestCellularLocation(_IntegrationTest):
         assert 'mitochondrion' in components
 
     def create_message_3(self):
-        content = KQMLList('FIND-COMMON-CELLULAR-LOCATION')
-        agent = ekb_from_text('AKT1, MAPK1')
-        content.sets('agent', str(agent))
-
-        affected = ekb_from_text('BRAF')
-        content.sets('affected', str(affected))
-
+        content = KQMLList('FIND-CELLULAR-LOCATION')
+        genes = ekb_from_text('AKT1, MAPK1')
+        content.sets('genes', str(genes))
 
         msg = get_request(content)
         return msg, content
@@ -478,9 +474,19 @@ class TestCellularLocation(_IntegrationTest):
     def check_response_to_message_3(self, output):
         assert output.head() == 'SUCCESS', output
         components = output.get('components')
-        genes = output.get('genes')
         assert 'mitochondrion' in components
-        assert 'AKT1' in genes
+
+    def create_message_4(self):
+        content = KQMLList('FIND-CELLULAR-LOCATION-FROM-NAMES')
+        content.set('genes', ['MAPK1',  'RAS'])
+
+        msg = get_request(content)
+        return msg, content
+
+    def check_response_to_message_4(self, output):
+        assert output.head() == 'FAILURE', output
+        reason = output.gets('reason')
+        assert reason == "NO_COMMON_CELLULAR_LOCATION_FOUND"
 
 class TestMutFreq(_IntegrationTest):
     def __init__(self, *args):
