@@ -331,7 +331,7 @@ class TestCommonUpstreams(_IntegrationTest):
     def check_response_to_message_failure(self, output):
         assert output.head() == 'FAILURE', output
         reason = output.gets('reason')
-        assert reason == "MISSING_MECHANISM"
+        assert reason == "NO_UPSTREAM_FOUND"
 
 
 class TestMutex(_IntegrationTest):
@@ -464,13 +464,9 @@ class TestCellularLocation(_IntegrationTest):
         assert 'mitochondrion' in components
 
     def create_message_3(self):
-        content = KQMLList('FIND-COMMON-CELLULAR-LOCATION')
-        agent = ekb_from_text('AKT1, MAPK1')
-        content.sets('agent', str(agent))
-
-        affected = ekb_from_text('BRAF')
-        content.sets('affected', str(affected))
-
+        content = KQMLList('FIND-CELLULAR-LOCATION')
+        genes = ekb_from_text('AKT1, MAPK1')
+        content.sets('genes', str(genes))
 
         msg = get_request(content)
         return msg, content
@@ -478,6 +474,35 @@ class TestCellularLocation(_IntegrationTest):
     def check_response_to_message_3(self, output):
         assert output.head() == 'SUCCESS', output
         components = output.get('components')
-        genes = output.get('genes')
         assert 'mitochondrion' in components
-        assert 'AKT1' in genes
+
+    def create_message_4(self):
+        content = KQMLList('FIND-CELLULAR-LOCATION-FROM-NAMES')
+        content.set('genes', ['MAPK1',  'RAS'])
+
+        msg = get_request(content)
+        return msg, content
+
+    def check_response_to_message_4(self, output):
+        assert output.head() == 'FAILURE', output
+        reason = output.gets('reason')
+        assert reason == "NO_COMMON_CELLULAR_LOCATION_FOUND"
+
+class TestMutFreq(_IntegrationTest):
+    def __init__(self, *args):
+        super(TestMutFreq, self).__init__(CausalityModule)
+
+    def create_message_OV(self):
+        content = KQMLList('FIND-MUTATION-FREQUENCY')
+        gene = ekb_kstring_from_text('TP53')
+        disease = ekb_from_text('Ovarian serous cystadenocarcinoma')
+        content.set('gene', gene)
+        content.set('disease', disease)
+
+        msg = get_request(content)
+        return msg, content
+
+    def check_response_to_message_OV(self, output):
+        assert output.head() == 'SUCCESS', output
+        mut_freq = output.gets('mutfreq')
+        assert mut_freq.startswith('0.81')

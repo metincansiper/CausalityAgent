@@ -2,9 +2,6 @@ import os
 import sqlite3
 from bioagents import BioagentException
 import csv
-# import aql
-# conn = aql.Connection('http://bmeg.io')
-# O = conn.graph("bmeg")
 
 
 tcga_study_names = ['ACC', 'BLCA', 'BRCA', 'CESC','CHOL', 'COAD', 'COADREAD', 'DLBC', 'GBM', 'GBMLGG', 'HNSC',
@@ -21,7 +18,6 @@ class DatabaseInitializer:
     def __init__(self, path):
         db_file = os.path.join(path, 'pnnl-dataset.db')
 
-        # self.alternative_mutsig()
 
         if os.path.isfile(db_file):
             self.cadb = sqlite3.connect(db_file)
@@ -34,23 +30,12 @@ class DatabaseInitializer:
 
 
     def __del__(self):
+        return
         self.cadb.close()
 
 
-    # def alternative_mutsig(self):
-    #
-    #     q = O.query().V().where(aql.eq("_label", "Individual"))
-    #
-    #     # q = q.where(aql.and_(aql.eq("source", "tcga")))  #.render({"disease_code": "_disease_code"}),
-    #
-    #     q = q.where(aql.and_(aql.eq("source", "tcga"), aql.in_("disease_code", tcga_study_names))).render({"id": "_gid"})
-    #
-    #     for r in q:
-    #         print(r.id)
-    #
-    #     # for code in tcga_study_names:
-    #     #     q = q.where(aql.and_(aql.eq("source", "tcga"), aql.eq("disease_code", code)))  # .render({"id":"_gid"})
-    #     #     print(list(q))
+
+
 
     def populate_tables(self, path):
         """
@@ -390,4 +375,5 @@ class DatabaseInitializer:
 #
 # db = DatabaseInitializer(os.path.dirname(os.path.realpath(__file__)) + '/resources/')
 #
-# db.get_unique_cellular_components()
+# print(db.mutation_frequency('TP53', 'LUAD'))
+

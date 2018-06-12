@@ -21,7 +21,8 @@ class CausalityModule(Bioagent):
              'FIND-CAUSALITY-SOURCE',
              'DATASET-CORRELATED-ENTITY', 'FIND-COMMON-UPSTREAMS',
              'RESTART-CAUSALITY-INDICES', 'FIND-MUTEX', 'FIND-MUTATION-SIGNIFICANCE',
-             'RESET-CAUSALITY-INDICES',  'FIND-CELLULAR-LOCATION-FROM-NAMES', 'FIND-CELLULAR-LOCATION-FROM-NAMES', 'FIND-CELLULAR-LOCATION', 'FIND-COMMON-CELLULAR-LOCATION']
+             'RESET-CAUSALITY-INDICES',  'FIND-CELLULAR-LOCATION-FROM-NAMES',
+             'FIND-CELLULAR-LOCATION', 'FIND-MUTATION-FREQUENCY']
 
     def __init__(self, **kwargs):
         self.CA = CausalityAgent(_resource_dir)
@@ -218,7 +219,7 @@ class CausalityModule(Bioagent):
         result = self.CA.find_common_upstreams(gene_list)
 
         if not result:
-            return self.make_failure('MISSING_MECHANISM')
+            return self.make_failure('NO_UPSTREAM_FOUND')
 
         reply = KQMLList('SUCCESS')
 
@@ -295,7 +296,7 @@ class CausalityModule(Bioagent):
         result = self.CA.find_mutex(gene_name, disease_abbr)
 
         if not result:
-            return self.make_failure('MISSING_MECHANISM')
+            return self.make_failure('NO_MUTEX_GENES_FOUND')
 
         reply = KQMLList('SUCCESS')
 
@@ -318,46 +319,7 @@ class CausalityModule(Bioagent):
 
         return reply
 
-    def respond_find_common_cellular_location(self, content):
-        """Response content to find-cellular-location request where genes are given as two lists of agent and affected
-        """
 
-        genes_arg1 = content.gets('AGENT')
-        genes_arg2 = content.gets('AFFECTED')
-
-        if not genes_arg1 or not genes_arg2:
-            return self.make_failure('MISSING_MECHANISM')
-
-        gene_names1 = _get_term_names(genes_arg1)
-        gene_names2 = _get_term_names(genes_arg2)
-
-        if not gene_names1 or not gene_names2:
-            return self.make_failure('MISSING_MECHANISM')
-
-        gene_list = [str(gene_name) for gene_name in gene_names1] + [str(gene_name) for gene_name in gene_names2]
-        # for gene_name in gene_names1:
-        #     gene_list.append(str(gene_name))
-
-        result = self.CA.find_most_likely_cellular_location(gene_list)
-
-        if not result:
-            return self.make_failure('MISSING_MECHANISM')
-
-        reply = KQMLList('SUCCESS')
-
-        components = KQMLList()
-        for r in result:
-            components.append(r)
-        reply.set('components', components)
-
-
-        gene_list_kqml = KQMLList()
-        for gene in gene_list:
-            gene_list_kqml.append(gene)
-
-        reply.set('genes', gene_list_kqml)
-
-        return reply
 
     def respond_find_cellular_location_from_names(self, content):
         """Response content to find-cellular-location-from-names request where genes are given as a list of names
@@ -378,7 +340,7 @@ class CausalityModule(Bioagent):
         result = self.CA.find_most_likely_cellular_location(gene_list)
 
         if not result:
-            return self.make_failure('MISSING_MECHANISM')
+            return self.make_failure('NO_COMMON_CELLULAR_LOCATION_FOUND')
 
         reply = KQMLList('SUCCESS')
 
@@ -389,36 +351,6 @@ class CausalityModule(Bioagent):
 
         return reply
 
-
-    def respond_find_cellular_location_from_model_json(self, content):
-        """Response content to find-cellular-location-from-names request where genes are given as a list of names
-        """
-
-        gene_names = content.get('GENES')
-
-        if not gene_names:
-            return self.make_failure('MISSING_MECHANISM')
-
-        if isinstance(gene_names, str):
-            return self.make_failure('INVALID_FORMAT')
-
-        gene_list = []
-        for gene_name in gene_names:
-            gene_list.append(str(gene_name))
-
-        result = self.CA.find_most_likely_cellular_location(gene_list)
-
-        if not result:
-            return self.make_failure('MISSING_MECHANISM')
-
-        reply = KQMLList('SUCCESS')
-
-        components = KQMLList()
-        for r in result:
-            components.append(r)
-        reply.set('components', components)
-
-        return reply
 
     def respond_find_cellular_location(self, content):
         """Response content to find-cellular-location request"""
@@ -439,7 +371,7 @@ class CausalityModule(Bioagent):
         result = self.CA.find_most_likely_cellular_location(gene_list)
 
         if not result:
-            return self.make_failure('MISSING_MECHANISM')
+            return self.make_failure('NO_COMMON_CELLULAR_LOCATION_FOUND')
 
         reply = KQMLList('SUCCESS')
 
@@ -447,6 +379,41 @@ class CausalityModule(Bioagent):
         for r in result:
             components.append(r)
         reply.set('components', components)
+
+        return reply
+
+    def respond_find_mutation_frequency(self, content):
+        """Response content to find-mutation-frequency request"""
+        gene_arg = content.gets('GENE')
+
+        if not gene_arg:
+            self.make_failure('MISSING_MECHANISM')
+
+        gene_names = _get_term_names(gene_arg)
+        if not gene_names:
+            return self.make_failure('MISSING_MECHANISM')
+        gene_name = gene_names[0]
+
+        disease_arg = content.gets('DISEASE')
+        if not disease_arg:
+            return self.make_failure('MISSING_MECHANISM')
+
+        disease_names = _get_term_names(disease_arg)
+        if not disease_names:
+            return self.make_failure('INVALID_DISEASE')
+
+        disease_name = disease_names[0].replace("-", " ").lower()
+        disease_abbr = self.CA.get_tcga_abbr(disease_name)
+        if disease_abbr is None:
+            return self.make_failure('INVALID_DISEASE')
+
+        result = self.CA.find_mutation_frequency(gene_name, disease_abbr)
+
+        if not result:
+            return self.make_failure('MISSING_MECHANISM')
+
+        reply = KQMLList('SUCCESS')
+        reply.sets('mutfreq', result)
 
         return reply
 
