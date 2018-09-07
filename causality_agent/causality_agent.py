@@ -1,8 +1,8 @@
 import re
 from .database_initializer import DatabaseInitializer
 import aql
-conn = aql.Connection('http://bmeg.io')
-O = conn.graph("bmeg")
+# conn = aql.Connection('http://bmeg.io')
+# O = conn.graph("bmeg")
 
 
 class CausalityAgent:
@@ -156,19 +156,24 @@ class CausalityAgent:
 
             rel = param.get('rel')
 
+
             if rel.upper() == "MODULATES":
+                query = "SELECT * FROM Causality WHERE Id1 IN " + "(" + id_str + ")";
+                rows = cur.execute(query).fetchall()
+            elif rel.upper() == "IS-MODULATED-BY":
                 query = "SELECT * FROM Causality WHERE Id1 IN " + "(" + id_str + ")";
                 rows = cur.execute(query).fetchall()
             else:
                 query = "SELECT * FROM Causality WHERE Rel = ?  AND Id1 IN " + "(" + id_str + ")";
                 rows = cur.execute(query, (rel,)).fetchall()
 
-
             if not rows:
                 return None
 
             targets = []
             for row in rows:
+                if rel.upper() == "IS-MODULATED-BY" and "IS-" not in row[4].upper():
+                    continue
                 causality = self.row_to_causality(row)
                 targets.append(causality)
 
@@ -395,30 +400,31 @@ class CausalityAgent:
 
     def find_mutation_frequency(self, gene, disease):
 
-        q = O.query().V().where(aql.eq("_label", "Biosample"))
-
-        q = q.where(aql.and_(aql.eq("source", "tcga"), aql.eq("disease_code", disease))).render({"id": "_gid"})
-        all_samples = []
-        for row in q:
-            all_samples.append(row.id)
-
-        if len(all_samples) == 0:
-            return 0
-        gene_id = 0
-        for i in O.query().V().where(aql.eq("_label", "Gene")).where(aql.eq("symbol", gene)):
-            gene_id = i.gid
-
-        mut_samples = []
-
-        # get TCGA samples with mutation
-
-        for i in O.query().V(gene_id).in_("variantIn").out("variantCall").out("callSetOf").where(
-                aql.in_("_gid", all_samples)).render({"gid": "_gid"}):
-            mut_samples.append(i.gid)
+        # q = O.query().V().where(aql.eq("_label", "Biosample"))
         #
+        # q = q.where(aql.and_(aql.eq("source", "tcga"), aql.eq("disease_code", disease))).render({"id": "_gid"})
+        # all_samples = []
+        # for row in q:
+        #     all_samples.append(row.id)
+        #
+        # if len(all_samples) == 0:
+        #     return 0
+        # gene_id = 0
+        # for i in O.query().V().where(aql.eq("_label", "Gene")).where(aql.eq("symbol", gene)):
+        #     gene_id = i.gid
+        #
+        # mut_samples = []
+        #
+        # # get TCGA samples with mutation
+        #
+        # for i in O.query().V(gene_id).in_("variantIn").out("variantCall").out("callSetOf").where(
+        #         aql.in_("_gid", all_samples)).render({"gid": "_gid"}):
+        #     mut_samples.append(i.gid)
+        # #
+        #
+        # freq = (float(len(mut_samples)) / float(len(all_samples))) * 100
 
-        freq = (float(len(mut_samples)) / float(len(all_samples))) * 100
-
+        freq = 0
         return freq
 
 # ca = CausalityAgent('./resources')

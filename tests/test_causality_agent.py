@@ -392,6 +392,21 @@ class TestMutSig(_IntegrationTest):
         mut_sig = output.gets('mutsig')
         assert mut_sig == "highly significant"
 
+    def create_message_BC(self):
+        content = KQMLList('FIND-MUTATION-SIGNIFICANCE')
+        gene = ekb_kstring_from_text('TP53')
+        disease = ekb_from_text('Breast cancer')
+        content.set('gene', gene)
+        content.set('disease', disease)
+
+        msg = get_request(content)
+        return msg, content
+
+    def check_response_to_message_BC(self, output):
+        assert output.head() == 'SUCCESS', output
+        mut_sig = output.gets('mutsig')
+        assert mut_sig == "highly significant"
+
     def create_message_PAAD(self):
         content = KQMLList('FIND-MUTATION-SIGNIFICANCE')
         gene = ekb_kstring_from_text('ACTN4')

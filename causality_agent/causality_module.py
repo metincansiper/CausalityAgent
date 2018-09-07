@@ -146,11 +146,11 @@ class CausalityModule(Bioagent):
         rel_map = {
             "phosphorylation": "is-phosphorylated-by",
             "dephosphorylation": "is-dephosphorylated-by",
-            "activate": "expression-is-up",
-            "increase": "upregulates-expression",
-            "inhibit": "downregulates-expression",
-            "decrease": "downregulates-expression",
-            "modulate": "modulates",
+            "activate": "expression-is-upregulated-by",
+            "increase": "expression-is-upregulated-by",
+            "inhibit": "expression-is-downregulated-by",
+            "decrease": "expression-is-downregulated-by",
+            "modulate": "is-modulated-by",
         }
 
         try:
