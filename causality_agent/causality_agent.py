@@ -159,6 +159,9 @@ class CausalityAgent:
             if rel.upper() == "MODULATES":
                 query = "SELECT * FROM Causality WHERE Id1 IN " + "(" + id_str + ")";
                 rows = cur.execute(query).fetchall()
+            elif rel.upper() == "IS-MODULATED-BY":
+                query = "SELECT * FROM Causality WHERE Id1 IN " + "(" + id_str + ")";
+                rows = cur.execute(query).fetchall()
             else:
                 query = "SELECT * FROM Causality WHERE Rel = ?  AND Id1 IN " + "(" + id_str + ")";
                 rows = cur.execute(query, (rel,)).fetchall()
