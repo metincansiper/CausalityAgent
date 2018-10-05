@@ -397,6 +397,7 @@ class CausalityAgent:
         return max_loc_names
 
     def find_mutation_frequency(self, gene, disease):
+
         #
         q = O.query().V().where(gripql.eq("_label", "Biosample"))
 
