@@ -1,8 +1,5 @@
 import re
 from .database_initializer import DatabaseInitializer
-import gripql
-conn = gripql.Connection('http://bmeg.io')
-O = conn.graph("bmeg")
 
 
 class CausalityAgent:
@@ -42,16 +39,17 @@ class CausalityAgent:
     def row_to_causality(row):
         """
           Convertd a row from sql table into causality object
-          Positions need to be trimmed to correct PC formatting. E.g. s100S for pSite
         """
 
-        sites1 = re.findall('([TYS][0-9]+)[TYS]', row[1])
-        sites2 = re.findall('([TYS][0-9]+)[TYS]', row[3])
+        sites1 = re.findall('([TYS][0-9]+)', row[1])
+        sites2 = re.findall('([TYS][0-9]+)', row[3])
+
         mods1 = [{'mod_type': 'phosphorylation',
                   'residue': site[0],
                   'position': site[1:],
                   'is_modified': True}
                   for site in sites1]
+
         if not sites1:
             mods1 = [{'mod_type': 'phosphorylation',
                   'residue': None,
@@ -396,35 +394,7 @@ class CausalityAgent:
 
         return max_loc_names
 
-    def find_mutation_frequency(self, gene, disease):
 
-        #
-        q = O.query().V().where(gripql.eq("_label", "Biosample"))
-
-        q = q.where(gripql.and_(gripql.eq("source", "tcga"), gripql.eq("disease_code", disease))).render({"id": "_gid"})
-        all_samples = []
-        for row in q:
-            all_samples.append(row.id)
-
-        if len(all_samples) == 0:
-            return 0
-        gene_id = 0
-        for i in O.query().V().where(gripql.eq("_label", "Gene")).where(gripql.eq("symbol", gene)):
-            gene_id = i.gid
-
-        mut_samples = []
-
-        # get TCGA samples with mutation
-
-        for i in O.query().V(gene_id).in_("variantIn").out("variantCall").out("callSetOf").where(
-                gripql.in_("_gid", all_samples)).render({"gid": "_gid"}):
-            mut_samples.append(i.gid)
-        #
-
-        freq = (float(len(mut_samples)) / float(len(all_samples))) * 100
-
-        return freq
-        # return 2
 
 # ca = CausalityAgent('./resources')
 # print(ca.find_causality({'source': {'id':'KRAS'}, 'target': {'id': 'MAPK3'}}))

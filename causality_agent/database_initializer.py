@@ -16,7 +16,7 @@ class DatabaseInitializer:
     """ Fills the pnnl database from the given data files"""
 
     def __init__(self, path):
-        db_file = os.path.join(path, 'pnnl-dataset.db')
+        db_file = os.path.join(path, 'causality-dataset.db')
 
 
         if os.path.isfile(db_file):
@@ -44,6 +44,7 @@ class DatabaseInitializer:
         :return:
         """
         self.populate_correlation_table(path)
+        self.populate_causality_pnnl_ovarian_table(path)
         self.populate_causality_table(path)
         self.populate_mutsig_table(path)
         self.populate_unexplained_table()
@@ -64,6 +65,91 @@ class DatabaseInitializer:
             'dephosphorylates': 'is-dephosphorylated-by',
             'upregulates-expression': 'expression-is-upregulated-by',
             'downregulates-expression': 'expression-is-downregulated-by',
+            'activates': 'is-activated-by',
+            'inhibits': 'is-inhibited-by',
+        }
+
+        try:
+            causality_path = os.path.join(path, 'causal-priors.txt')
+        except Exception as e:
+            raise BioagentException.PathNotFoundException()
+
+        causality_file = open(causality_path, 'r')
+
+        with self.cadb:
+            cur = self.cadb.cursor()
+            cur.execute("DROP TABLE IF EXISTS Causality")
+            cur.execute("CREATE TABLE Causality(Id1 TEXT, PSite1 TEXT, Id2 TEXT, PSite2 TEXT, Rel TEXT, UriStr TEXT)")
+
+            for line in causality_file:
+                vals = line.split('\t')
+                # id_str1 = vals[0].upper().split('-')
+                # id1 = id_str1[0]
+                # if len(id_str1) > 1:
+                #     p_site1 = id_str1[1]
+                # else:
+                #     p_site1 = ' '
+                #
+                # id_str2 = vals[2].upper().split('-')
+                # id2 = id_str2[0]
+                #
+                # if len(id_str2) > 1:
+                #     p_site2 = id_str2[1]
+                # else:
+                #     p_site2 = ' '
+                #
+                # rel = vals[1]
+                #
+
+
+                id1 = vals[0].upper()
+                p_site1 = ' '
+                rel = vals[1]
+                id2 =  vals[2].upper()
+
+                uri_arr = []
+                if vals[3]:
+                    uri_arr = vals[3].split(" ")
+
+                if len(uri_arr) == 0:
+                    uri_arr = [vals[3]]
+
+                uri_str = ""
+                for uri in uri_arr:
+                    uri_str = uri_str + "uri= " + uri + "&"
+
+                if len(vals) > 4:
+                    p_site_str = vals[4].upper().split(';')
+
+                    for p_site2 in p_site_str:
+                        opp_rel = opposite_rel[rel]
+                        cur.execute("INSERT INTO Causality VALUES(?, ?, ?, ?, ?, ?)", (id1, p_site1, id2, p_site2, rel, uri_str))
+                        # opposite relation
+                        cur.execute("INSERT INTO Causality VALUES(?, ?, ?, ?, ?, ?)", (id2, p_site2, id1, p_site1, opp_rel, uri_str))
+                else:
+                    p_site2 = ' '
+                    opp_rel = opposite_rel[rel]
+                    cur.execute("INSERT INTO Causality VALUES(?, ?, ?, ?, ?, ?)",
+                                (id1, p_site1, id2, p_site2, rel, uri_str))
+                    # opposite relation
+                    cur.execute("INSERT INTO Causality VALUES(?, ?, ?, ?, ?, ?)",
+                                (id2, p_site2, id1, p_site1, opp_rel, uri_str))
+
+        causality_file.close()
+
+    def populate_causality_pnnl_ovarian_table(self, path):
+        """
+        Fills the causality table for pnnl ovarian cancer data
+        :param path: Path to the folder that keeps causative-data-centric.sif
+        :return:
+        """
+        opposite_rel = {
+            'phosphorylates': 'is-phosphorylated-by',
+            'dephosphorylates': 'is-dephosphorylated-by',
+            'upregulates-expression': 'expression-is-upregulated-by',
+            'downregulates-expression': 'expression-is-downregulated-by',
+            'activates': 'is-activated-by',
+            'inhibits': 'is-inhibited-by',
         }
 
         try:
@@ -75,8 +161,8 @@ class DatabaseInitializer:
 
         with self.cadb:
             cur = self.cadb.cursor()
-            cur.execute("DROP TABLE IF EXISTS Causality")
-            cur.execute("CREATE TABLE Causality(Id1 TEXT, PSite1 TEXT, Id2 TEXT, PSite2 TEXT, Rel TEXT, UriStr TEXT)")
+            cur.execute("DROP TABLE IF EXISTS CausalityPNNLOvarian")
+            cur.execute("CREATE TABLE CausalityPNNLOvarian(Id1 TEXT, PSite1 TEXT, Id2 TEXT, PSite2 TEXT, Rel TEXT, UriStr TEXT)")
 
             for line in causality_file:
                 vals = line.split('\t')
@@ -109,9 +195,11 @@ class DatabaseInitializer:
                     uri_str = uri_str + "uri= " + uri + "&"
 
                 opp_rel = opposite_rel[rel]
-                cur.execute("INSERT INTO Causality VALUES(?, ?, ?, ?, ?, ?)", (id1, p_site1, id2, p_site2, rel, uri_str))
+                cur.execute("INSERT INTO CausalityPNNLOvarian VALUES(?, ?, ?, ?, ?, ?)",
+                            (id1, p_site1, id2, p_site2, rel, uri_str))
                 # opposite relation
-                cur.execute("INSERT INTO Causality VALUES(?, ?, ?, ?, ?, ?)", (id2, p_site2, id1, p_site1, opp_rel, uri_str))
+                cur.execute("INSERT INTO CausalityPNNLOvarian VALUES(?, ?, ?, ?, ?, ?)",
+                            (id2, p_site2, id1, p_site1, opp_rel, uri_str))
 
         causality_file.close()
 
@@ -260,8 +348,8 @@ class DatabaseInitializer:
             cur = self.cadb.cursor()
             cur.execute("DROP TABLE IF EXISTS Explained_Correlations")
             cur.execute("CREATE TABLE Explained_Correlations AS SELECT * FROM Correlations "
-                        "LEFT JOIN Causality ON Causality.Id1 = Correlations.Id1 AND Causality.Id2 = Correlations.Id2  "
-                        "AND Causality.PSite1 = Correlations.PSite1 AND Causality.PSite2 = Correlations.PSite2 "
+                        "LEFT JOIN CausalityPNNLOvarian ON CausalityPNNLOvarian.Id1 = Correlations.Id1 AND CausalityPNNLOvarian.Id2 = Correlations.Id2  "
+                        "AND CausalityPNNLOvarian.PSite1 = Correlations.PSite1 AND CausalityPNNLOvarian.PSite2 = Correlations.PSite2 "
                         "WHERE Rel IS NOT NULL",
                         ).fetchall()
 
@@ -274,8 +362,8 @@ class DatabaseInitializer:
             cur = self.cadb.cursor()
             cur.execute("DROP TABLE IF EXISTS Unexplained_Correlations")
             cur.execute("CREATE TABLE Unexplained_Correlations AS SELECT * FROM Correlations "
-                        "LEFT JOIN Causality ON Causality.Id1 = Correlations.Id1 AND Causality.Id2 = Correlations.Id2  "
-                        "AND Causality.PSite1 = Correlations.PSite1 AND Causality.PSite2 = Correlations.PSite2 "
+                        "LEFT JOIN CausalityPNNLOvarian ON CausalityPNNLOvarian.Id1 = Correlations.Id1 AND CausalityPNNLOvarian.Id2 = Correlations.Id2  "
+                        "AND CausalityPNNLOvarian.PSite1 = Correlations.PSite1 AND CausalityPNNLOvarian.PSite2 = Correlations.PSite2 "
                         "WHERE Rel IS NULL",
                         ).fetchall()
 

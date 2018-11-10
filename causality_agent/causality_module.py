@@ -22,7 +22,7 @@ class CausalityModule(Bioagent):
              'DATASET-CORRELATED-ENTITY', 'FIND-COMMON-UPSTREAMS',
              'RESTART-CAUSALITY-INDICES', 'FIND-MUTEX', 'FIND-MUTATION-SIGNIFICANCE',
              'RESET-CAUSALITY-INDICES',  'FIND-CELLULAR-LOCATION-FROM-NAMES',
-             'FIND-CELLULAR-LOCATION', 'FIND-MUTATION-FREQUENCY']
+             'FIND-CELLULAR-LOCATION']
 
     def __init__(self, **kwargs):
         self.CA = CausalityAgent(_resource_dir)
@@ -67,11 +67,20 @@ class CausalityModule(Bioagent):
         reply.sets('paths', indra_json)
 
         # Send PC links to provenance tab
-        self.send_provenance(result['uri_str'])
+        self.send_provenance(result) # ['uri_str'])
 
         return reply
 
-    def send_provenance(self, uri_str):
+    def send_provenance(self, result):
+        id1 = result['id1']
+        mods1 = result['mods1']
+        id2 = result['id2']
+        mods2 = result['mods2']
+        rel = result['rel']
+
+        title = str(id1) +  ' ' + str(rel) + ' ' + str(id2)
+
+        uri_str = result['uri_str']
         pc_url = 'http://www.pathwaycommons.org/pc2/get?' + uri_str + 'format=SBGN'
         html = '<a href= \'' + pc_url + '\' target= \'_blank\' > PC link</a>'
         msg = KQMLPerformative('tell')
@@ -79,6 +88,7 @@ class CausalityModule(Bioagent):
         content.sets('html', html)
         pc_url_formatted = "http://www.pathwaycommons.org/pc2/get?" + uri_str + "format=SBGN"
         content.sets('pc', pc_url_formatted)
+        content.sets('title', title)
         msg.set('content', content)
         self.send(msg)
 
@@ -121,7 +131,7 @@ class CausalityModule(Bioagent):
         # Send PC links to provenance tab
         # Multiple interactions are sent separately
         for r in result:
-            self.send_provenance(r['uri_str'])
+            self.send_provenance(r) # r['uri_str'])
 
         indra_json = json.dumps([make_indra_json(r) for r in result])
 
@@ -167,7 +177,7 @@ class CausalityModule(Bioagent):
 
         # Multiple interactions are sent separately
         for r in result:
-            self.send_provenance(r['uri_str'])
+            self.send_provenance(r) # ['uri_str'])
 
         indra_json = json.dumps([make_indra_json(r) for r in result])
 

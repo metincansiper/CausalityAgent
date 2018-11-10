@@ -34,12 +34,11 @@ class TestCausalPath(_IntegrationTest):
         assert len(stmts) == 1
         assert stmts[0].enz.name == 'MAPK1'
         assert stmts[0].sub.name == 'JUND'
-        assert stmts[0].residue == 'S'
-        assert stmts[0].position == '100'
+
 
     def create_message_2(self):
-        source = ekb_kstring_from_text('ITGAV')
-        target = ekb_kstring_from_text('ILK')
+        source = ekb_kstring_from_text('MAPK1')
+        target = ekb_kstring_from_text('CREB1')
         content = KQMLList('FIND-CAUSAL-PATH')
         content.set('source', source)
         content.set('target', target)
@@ -52,14 +51,16 @@ class TestCausalPath(_IntegrationTest):
         paths = output.gets('paths')
         jd = json.loads(paths)
         stmts = stmts_from_json(jd)
-        assert len(stmts) == 1
-        assert stmts[0].subj.name == 'ITGAV'
-        assert stmts[0].obj.name == 'ILK'
+        # assert len(stmts) == 1
+        assert stmts[0].enz.name == 'MAPK1'
+        assert stmts[0].sub.name == 'CREB1'
+        assert stmts[0].residue == 'S'
+        assert stmts[0].position == '133'
 
 
     def create_message_failure(self):
-        source = ekb_kstring_from_text('MAPK3')
-        target = ekb_kstring_from_text('TP53')
+        source = ekb_kstring_from_text('MAPK1')
+        target = ekb_kstring_from_text('RAS')
         content = KQMLList('FIND-CAUSAL-PATH')
         content.set('source', source)
         content.set('target', target)
@@ -88,7 +89,7 @@ class TestCausalPath(_IntegrationTest):
         assert reason == 'NO_PATH_FOUND'
 
     def create_message_failure_3(self):
-        source = ekb_kstring_from_text('BRAF')
+        source = ekb_kstring_from_text('RAS')
         target = ekb_kstring_from_text('MAPK1')
         content = KQMLList('FIND-CAUSAL-PATH')
         content.set('source', source)
@@ -120,10 +121,10 @@ class TestCausalityTarget(_IntegrationTest):
         paths = output.gets('paths')
         jd = json.loads(paths)
         stmts = stmts_from_json(jd)
-        assert len(stmts) == 19
-        assert stmts[0].sub.name == 'EIF4EBP1'
+        assert len(stmts) == 904
+        assert stmts[0].sub.name == 'RPTOR'
         assert stmts[0].residue == 'S'
-        assert stmts[0].position == '65'
+        assert stmts[0].position == '863'
 
     def create_message_failure(self):
         source = ekb_kstring_from_text('MAPK1')
@@ -169,17 +170,17 @@ class TestCausalitySource(_IntegrationTest):
         paths = output.gets('paths')
         jd = json.loads(paths)
         stmts = stmts_from_json(jd)
-        assert len(stmts) == 2
+        assert len(stmts) == 80
         assert stmts[0].sub.name == 'BRAF'
-        assert stmts[0].enz.name == 'MAPK1'
+        assert stmts[0].enz.name == 'NRAS'
         assert stmts[0].residue == 'S'
-        assert stmts[0].position == '151'
+        assert stmts[0].position == '601'
 
     def create_message_failure(self):
         target = ekb_kstring_from_text('BRAF')
         content = KQMLList('FIND-CAUSALITY-SOURCE')
         content.set('target', target)
-        content.sets('type', 'phosphorylates')
+        content.sets('type', 'activates')
         msg = get_request(content)
         return msg, content
 
@@ -487,22 +488,3 @@ class TestCellularLocation(_IntegrationTest):
         assert output.head() == 'FAILURE', output
         reason = output.gets('reason')
         assert reason == "NO_COMMON_CELLULAR_LOCATION_FOUND"
-#
-class TestMutFreq(_IntegrationTest):
-    def __init__(self, *args):
-        super(TestMutFreq, self).__init__(CausalityModule)
-
-    def create_message_OV(self):
-        content = KQMLList('FIND-MUTATION-FREQUENCY')
-        gene = ekb_kstring_from_text('TP53')
-        disease = ekb_from_text('Ovarian serous cystadenocarcinoma')
-        content.set('gene', gene)
-        content.set('disease', disease)
-
-        msg = get_request(content)
-        return msg, content
-
-    def check_response_to_message_OV(self, output):
-        assert output.head() == 'SUCCESS', output
-        mut_freq = output.gets('mutfreq')
-        assert mut_freq.startswith('0.81')
