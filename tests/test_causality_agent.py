@@ -488,3 +488,21 @@ class TestCellularLocation(_IntegrationTest):
         assert output.head() == 'FAILURE', output
         reason = output.gets('reason')
         assert reason == "NO_COMMON_CELLULAR_LOCATION_FOUND"
+
+class TestGeneSummary(_IntegrationTest):
+
+    def __init__(self, *args):
+        super(TestGeneSummary, self).__init__(CausalityModule)
+
+    def create_message_AKT1(self):
+        content = KQMLList('FIND-GENE-SUMMARY')
+        genes = ekb_from_text('AKT1')
+        content.sets('gene', str(genes))
+
+        msg = get_request(content)
+        return msg, content
+
+    def check_response_to_message_AKT1(self, output):
+        assert output.head() == 'SUCCESS', output
+        components = output.get('geneSummary')
+        assert 'AKT1' in components.data

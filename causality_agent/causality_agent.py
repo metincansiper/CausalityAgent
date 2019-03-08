@@ -1,6 +1,7 @@
 import re
 from .database_initializer import DatabaseInitializer
-
+import http.client, urllib.parse
+import requests
 
 class CausalityAgent:
     def __init__(self, path):
@@ -393,6 +394,46 @@ class CausalityAgent:
                     # max_loc_names.append(str(location[0]).encode('utf8'))
 
         return max_loc_names
+
+    def find_gene_summary(self, gene):
+        pc_url = "http://www.pathwaycommons.org/biogene/retrieve.do?"
+
+
+        headers = {"Content-type": "application/x-www-form-urlencoded","Accept": "text/plain"}
+
+
+        params = urllib.parse.urlencode({'query': gene, 'org': 'human', 'format':'json'})
+
+        # sending get request and saving the response as response object
+        r = requests.get(url=pc_url, params=params)
+
+        # extracting data in json format
+        data = r.json()
+
+        # conn = http.client.HTTPConnection(pc_url)
+        #
+        # conn.request("GET", "/retrieve.do?", params, headers)
+        #
+        #
+        #
+        # r2 = conn.getresponse()
+        #
+        #
+        #
+        # if r2.status != 200:
+        #     return -1
+        #
+        # data = r2.read().decode("utf-8")
+
+        if data['geneInfo'] and len(data['geneInfo']) > 0 and data['geneInfo'][0]['geneSummary']:
+            return data['geneInfo'][0]['geneSummary']
+        else:
+            return ""
+
+
+
+
+
 
 
 

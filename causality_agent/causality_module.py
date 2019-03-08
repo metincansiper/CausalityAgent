@@ -22,7 +22,7 @@ class CausalityModule(Bioagent):
              'DATASET-CORRELATED-ENTITY', 'FIND-COMMON-UPSTREAMS',
              'RESTART-CAUSALITY-INDICES', 'FIND-MUTEX', 'FIND-MUTATION-SIGNIFICANCE',
              'RESET-CAUSALITY-INDICES',  'FIND-CELLULAR-LOCATION-FROM-NAMES',
-             'FIND-CELLULAR-LOCATION']
+             'FIND-CELLULAR-LOCATION', 'FIND-GENE-SUMMARY']
 
     def __init__(self, **kwargs):
         self.CA = CausalityAgent(_resource_dir)
@@ -427,6 +427,23 @@ class CausalityModule(Bioagent):
 
         return reply
 
+    def respond_find_gene_summary(self, content):
+        gene_arg = content.gets('GENE')
+
+        if not gene_arg:
+            self.make_failure('MISSING_MECHANISM')
+
+        gene_names = _get_term_names(gene_arg)
+        if not gene_names:
+            return self.make_failure('MISSING_MECHANISM')
+        gene_name = gene_names[0]
+
+        result = self.CA.find_gene_summary(gene_name)
+
+        reply = KQMLList('SUCCESS')
+        reply.sets('geneSummary', result)
+
+        return reply
 
 def _get_term_names(term_str):
     """Given an ekb-xml returns the names of genes in a list"""
@@ -486,6 +503,7 @@ def make_indra_json(causality):
                   'position': causality['mods%s' % t][0]['position']}
 
     return indra_json
+
 
 
 
