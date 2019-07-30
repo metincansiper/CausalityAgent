@@ -6,6 +6,7 @@ from bioagents import Bioagent
 from .causality_agent import CausalityAgent
 from indra.sources.trips.processor import TripsProcessor
 from kqml import KQMLModule, KQMLPerformative, KQMLList, KQMLString, KQMLToken
+from indra.statements import stmts_from_json
 
 
 logging.basicConfig(format='%(levelname)s: %(name)s - %(message)s',
@@ -37,15 +38,15 @@ class CausalityModule(Bioagent):
     def respond_find_causal_path(self, content):
         """Response content to find-causal-path request"""
 
-        source_arg = content.gets('SOURCE')
-        target_arg = content.gets('TARGET')
+        source_arg = content.get('SOURCE')
+        target_arg = content.get('TARGET')
         direction = content.gets('DIRECTION')
 
         if not source_arg or not target_arg:
             return self.make_failure('MISSING_MECHANISM')
 
-        target_names = _get_term_names(target_arg)
-        source_names = _get_term_names(source_arg)
+        target_names = _get_kqml_names(target_arg)
+        source_names = _get_kqml_names(source_arg)
 
         if not target_names or not source_names:
             return self.make_failure('NO_PATH_FOUND')
@@ -61,10 +62,12 @@ class CausalityModule(Bioagent):
         if not result:
             return self.make_failure('NO_PATH_FOUND')
 
-        indra_json = json.dumps([make_indra_json(result)])
+        indra_json = [make_indra_json(result)]
+        indra_stmts = stmts_from_json(indra_json)
+        indra_cl_json = self.make_cljson(indra_stmts)
 
         reply = KQMLList('SUCCESS')
-        reply.sets('paths', indra_json)
+        reply.set('paths', indra_cl_json)
 
         # Send PC links to provenance tab
         self.send_provenance(result) # ['uri_str'])
@@ -94,13 +97,13 @@ class CausalityModule(Bioagent):
 
     def respond_find_causality_target(self, content):
         """Response content to find-causality-target request"""
-        target_arg = content.gets('SOURCE')
+        target_arg = content.get('SOURCE')
         rel = content.gets('TYPE')
 
         if not target_arg:
             return self.make_failure('MISSING_MECHANISM')
-        
-        target_names = _get_term_names(target_arg)
+
+        target_names = _get_kqml_names(target_arg)
         if not target_names:
             return self.make_failure('MISSING_MECHANISM')
         target_name = target_names[0]
@@ -133,22 +136,24 @@ class CausalityModule(Bioagent):
         for r in result:
             self.send_provenance(r) # r['uri_str'])
 
-        indra_json = json.dumps([make_indra_json(r) for r in result])
+        indra_json = [make_indra_json(r) for r in result]
+        indra_stmts = stmts_from_json(indra_json)
+        indra_cl_json = self.make_cljson(indra_stmts)
 
         reply = KQMLList('SUCCESS')
-        reply.sets('paths', indra_json)
+        reply.set('paths', indra_cl_json)
 
         return reply
 
     def respond_find_causality_source(self, content):
         """Response content to find-qca-path request"""
-        source_arg = content.gets('TARGET')
+        source_arg = content.get('TARGET')
         rel = content.gets('TYPE')
 
         if not source_arg:
             return self.make_failure('MISSING_MECHANISM')
 
-        source_names = _get_term_names(source_arg)
+        source_names = _get_kqml_names(source_arg)
         if not source_names:
             return self.make_failure('MISSING_MECHANISM')
         source_name = source_names[0]
@@ -179,20 +184,22 @@ class CausalityModule(Bioagent):
         for r in result:
             self.send_provenance(r) # ['uri_str'])
 
-        indra_json = json.dumps([make_indra_json(r) for r in result])
+        indra_json = [make_indra_json(r) for r in result]
+        indra_stmts = stmts_from_json(indra_json)
+        indra_cl_json = self.make_cljson(indra_stmts)
 
         reply = KQMLList('SUCCESS')
-        reply.sets('paths', indra_json)
+        reply.sets('paths', indra_cl_json)
 
         return reply
 
     def respond_dataset_correlated_entity(self, content):
         """Response content to find-database-correlated-entity request"""
-        source_arg = content.gets('SOURCE')
+        source_arg = content.get('SOURCE')
         if not source_arg:
             return self.make_failure('MISSING_MECHANISM')
 
-        source_names = _get_term_names(source_arg)
+        source_names = _get_kqml_names(source_arg)
         if not source_names:
             return self.make_failure('MISSING_MECHANISM')
 
@@ -202,7 +209,9 @@ class CausalityModule(Bioagent):
             return self.make_failure('NO_PATH_FOUND')
 
         reply = KQMLList('SUCCESS')
+
         reply.sets('target', res['id2'])
+        # TODO: should be float as original or converted to string?
         reply.sets('correlation', str(res['correlation']))
         reply.sets('explainable', res['explainable'])
 
@@ -212,21 +221,21 @@ class CausalityModule(Bioagent):
     def respond_find_common_upstreams(self, content):
         """Response content to find-common-upstreams request"""
 
-        genes_arg = content.gets('GENES')
+        genes_arg = content.get('GENES')
 
         if not genes_arg:
             return self.make_failure('MISSING_MECHANISM')
 
-        gene_names = _get_term_names(genes_arg)
+        gene_names = _get_kqml_names(genes_arg)
 
         if not gene_names:
             return self.make_failure('MISSING_MECHANISM')
 
-        gene_list = []
-        for gene_name in gene_names:
-            gene_list.append(str(gene_name))
+        # gene_list = []
+        # for gene_name in gene_names:
+        #     gene_list.append(str(gene_name))
 
-        result = self.CA.find_common_upstreams(gene_list)
+        result = self.CA.find_common_upstreams(gene_names)
 
         if not result:
             return self.make_failure('NO_UPSTREAM_FOUND')
@@ -242,25 +251,25 @@ class CausalityModule(Bioagent):
 
     def respond_find_mutation_significance(self, content):
         """Response content to find-mutation-significance request"""
-        gene_arg = content.gets('GENE')
+        gene_arg = content.get('GENE')
 
         if not gene_arg:
             self.make_failure('MISSING_MECHANISM')
 
-        gene_names = _get_term_names(gene_arg)
+        gene_names = _get_kqml_names(gene_arg)
         if not gene_names:
             return self.make_failure('MISSING_MECHANISM')
         gene_name = gene_names[0]
 
-        disease_arg = content.gets('DISEASE')
+        disease_arg = content.get('DISEASE')
         if not disease_arg:
             return self.make_failure('MISSING_MECHANISM')
 
-        disease_names = _get_term_names(disease_arg)
+        disease_names = _get_kqml_names(disease_arg)
         if not disease_names:
             return self.make_failure('INVALID_DISEASE')
 
-        disease_name = disease_names[0].replace("-", " ").lower()
+        disease_name = _sanitize_disase_name(disease_names[0])
         disease_abbr = self.CA.get_tcga_abbr(disease_name)
         if disease_abbr is None:
             return self.make_failure('INVALID_DISEASE')
@@ -278,27 +287,27 @@ class CausalityModule(Bioagent):
     def respond_find_mutex(self, content):
         """Response content to find-mutex request"""
 
-        gene_arg = content.gets('GENE')
+        gene_arg = content.get('GENE')
 
         if not gene_arg:
             return self.make_failure('MISSING_MECHANISM')
 
-        gene_names = _get_term_names(gene_arg)
+        gene_names = _get_kqml_names(gene_arg)
         if not gene_names:
             return self.make_failure('MISSING_MECHANISM')
 
         gene_name = gene_names[0]
 
-        disease_arg = content.gets('DISEASE')
+        disease_arg = content.get('DISEASE')
         if not disease_arg:
             return self.make_failure('MISSING_MECHANISM')
 
 
-        disease_names = _get_term_names(disease_arg)
+        disease_names = _get_kqml_names(disease_arg)
         if not disease_names:
             return self.make_failure('INVALID_DISEASE')
 
-        disease_name = disease_names[0].replace("-", " ").lower()
+        disease_name = _sanitize_disase_name(disease_names[0])
         disease_abbr = self.CA.get_tcga_abbr(disease_name)
         if disease_abbr is None:
             return self.make_failure('INVALID_DISEASE')
@@ -343,11 +352,11 @@ class CausalityModule(Bioagent):
         if isinstance(gene_names, str):
             return self.make_failure('INVALID_FORMAT')
 
-        gene_list = []
-        for gene_name in gene_names:
-            gene_list.append(str(gene_name))
+        # gene_list = []
+        # for gene_name in gene_names:
+        #     gene_list.append(str(gene_name))
 
-        result = self.CA.find_most_likely_cellular_location(gene_list)
+        result = self.CA.find_most_likely_cellular_location(gene_names)
 
         if not result:
             return self.make_failure('NO_COMMON_CELLULAR_LOCATION_FOUND')
@@ -364,21 +373,21 @@ class CausalityModule(Bioagent):
 
     def respond_find_cellular_location(self, content):
         """Response content to find-cellular-location request"""
-        genes_arg = content.gets('GENES')
+        genes_arg = content.get('GENES')
 
         if not genes_arg:
             return self.make_failure('MISSING_MECHANISM')
 
-        gene_names = _get_term_names(genes_arg)
+        gene_names = _get_kqml_names(genes_arg)
 
         if not gene_names:
             return self.make_failure('MISSING_MECHANISM')
 
-        gene_list = []
-        for gene_name in gene_names:
-            gene_list.append(str(gene_name))
+        # gene_list = []
+        # for gene_name in gene_names:
+        #     gene_list.append(str(gene_name))
 
-        result = self.CA.find_most_likely_cellular_location(gene_list)
+        result = self.CA.find_most_likely_cellular_location(gene_names)
 
         if not result:
             return self.make_failure('NO_COMMON_CELLULAR_LOCATION_FOUND')
@@ -412,7 +421,7 @@ class CausalityModule(Bioagent):
         if not disease_names:
             return self.make_failure('INVALID_DISEASE')
 
-        disease_name = disease_names[0].replace("-", " ").lower()
+        disease_name = _sanitize_disase_name(disease_names[0])
         disease_abbr = self.CA.get_tcga_abbr(disease_name)
         if disease_abbr is None:
             return self.make_failure('INVALID_DISEASE')
@@ -428,12 +437,12 @@ class CausalityModule(Bioagent):
         return reply
 
     def respond_find_gene_summary(self, content):
-        gene_arg = content.gets('GENE')
+        gene_arg = content.get('GENE')
 
         if not gene_arg:
             self.make_failure('MISSING_MECHANISM')
 
-        gene_names = _get_term_names(gene_arg)
+        gene_names = _get_kqml_names(gene_arg)
         if not gene_names:
             return self.make_failure('MISSING_MECHANISM')
         gene_name = gene_names[0]
@@ -444,6 +453,29 @@ class CausalityModule(Bioagent):
         reply.sets('geneSummary', result)
 
         return reply
+
+def _get_kqml_names(kqmlList):
+    """Given a kqml list returns the names of sublists in the list"""
+    if not kqmlList:
+        return None
+
+    arr = kqmlList.data;
+    if len(arr) == 0:
+        return []
+
+    if not isinstance(arr[0], KQMLList):
+        arr = [kqmlList]
+
+    res = list(map(lambda kl: kl.get('NAME').string_value(), arr))
+
+    return res
+
+
+def _sanitize_disase_name(name):
+    """Given a disease name returns the sanitized version of it"""
+    sanitized_name = name.replace("-", " ").lower()
+    return sanitized_name
+
 
 def _get_term_names(term_str):
     """Given an ekb-xml returns the names of genes in a list"""
