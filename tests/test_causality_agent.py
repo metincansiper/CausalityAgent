@@ -10,6 +10,9 @@ import time
 
 ca = causality_agent.CausalityAgent(_resource_dir)
 
+def _get_names_from_list_cljson(list_cljson):
+    return list(map(lambda o: o.gets('NAME'), list_cljson))
+
 def _read_from_kqml_list(kl, prop_path):
     """read a property of a kqml list from given path array"""
     res = kl
@@ -328,7 +331,7 @@ class TestCommonUpstreams(_IntegrationTest):
     def check_response_to_message(self, output):
         assert output.head() == 'SUCCESS', output
         upstreams = output.get('upstreams')
-        assert 'EGF' in upstreams
+        assert 'EGF' in _get_names_from_list_cljson(upstreams)
 
     def create_message_failure(self):
         content = KQMLList('FIND-COMMON-UPSTREAMS')
@@ -458,7 +461,7 @@ class TestCellularLocation(_IntegrationTest):
     def check_response_to_message_AKT1(self, output):
         assert output.head() == 'SUCCESS', output
         components = output.get('components')
-        assert 'mitochondrion' in components
+        assert 'mitochondrion' in _get_names_from_list_cljson(components)
 
     def create_message_2(self):
         content = KQMLList('FIND-CELLULAR-LOCATION-FROM-NAMES')
@@ -470,7 +473,7 @@ class TestCellularLocation(_IntegrationTest):
     def check_response_to_message_2(self, output):
         assert output.head() == 'SUCCESS', output
         components = output.get('components')
-        assert 'mitochondrion' in components
+        assert 'mitochondrion' in _get_names_from_list_cljson(components)
 
     def create_message_3(self):
         content = KQMLList('FIND-CELLULAR-LOCATION')
@@ -483,7 +486,7 @@ class TestCellularLocation(_IntegrationTest):
     def check_response_to_message_3(self, output):
         assert output.head() == 'SUCCESS', output
         components = output.get('components')
-        assert 'mitochondrion' in components
+        assert 'mitochondrion' in _get_names_from_list_cljson(components)
 
     def create_message_4(self):
         content = KQMLList('FIND-CELLULAR-LOCATION-FROM-NAMES')

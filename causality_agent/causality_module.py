@@ -6,7 +6,8 @@ from bioagents import Bioagent
 from .causality_agent import CausalityAgent
 from indra.sources.trips.processor import TripsProcessor
 from kqml import KQMLModule, KQMLPerformative, KQMLList, KQMLString, KQMLToken
-from indra.statements import stmts_from_json
+from indra.statements import stmts_from_json, Agent
+from indra.databases import hgnc_client
 
 
 logging.basicConfig(format='%(levelname)s: %(name)s - %(message)s',
@@ -241,10 +242,7 @@ class CausalityModule(Bioagent):
             return self.make_failure('NO_UPSTREAM_FOUND')
 
         reply = KQMLList('SUCCESS')
-
-        upstreams = KQMLList()
-        for r in result:
-            upstreams.append(r)
+        upstreams = _get_genes_cljson(result)
         reply.set('upstreams', upstreams)
 
         return reply
@@ -333,7 +331,7 @@ class CausalityModule(Bioagent):
             groups.set('group', genes)
             mutex.append(groups)
             # mutex.append(groups)
-
+        # TODO: cljson?
         reply.set('mutex', mutex)
 
         return reply
@@ -352,10 +350,6 @@ class CausalityModule(Bioagent):
         if isinstance(gene_names, str):
             return self.make_failure('INVALID_FORMAT')
 
-        # gene_list = []
-        # for gene_name in gene_names:
-        #     gene_list.append(str(gene_name))
-
         result = self.CA.find_most_likely_cellular_location(gene_names)
 
         if not result:
@@ -363,9 +357,7 @@ class CausalityModule(Bioagent):
 
         reply = KQMLList('SUCCESS')
 
-        components = KQMLList()
-        for r in result:
-            components.append(r)
+        components = _get_default_list_cljson(result)
         reply.set('components', components)
 
         return reply
@@ -387,16 +379,14 @@ class CausalityModule(Bioagent):
         # for gene_name in gene_names:
         #     gene_list.append(str(gene_name))
 
-        result = self.CA.find_most_likely_cellular_location(gene_names)
+        # result = self.CA.find_most_likely_cellular_location(gene_names)
 
         if not result:
             return self.make_failure('NO_COMMON_CELLULAR_LOCATION_FOUND')
 
         reply = KQMLList('SUCCESS')
 
-        components = KQMLList()
-        for r in result:
-            components.append(r)
+        components = _get_default_list_cljson(result)
         reply.set('components', components)
 
         return reply
@@ -535,6 +525,29 @@ def make_indra_json(causality):
                   'position': causality['mods%s' % t][0]['position']}
 
     return indra_json
+
+def _get_default_list_cljson(names):
+    agents = list(map(lambda n: Agent(n), names))
+    return Bioagent.make_cljson(agents)
+
+def _get_genes_cljson(gene_names):
+    agents = list(map(lambda n: _get_agent_from_gene_name(n), gene_names))
+    return Bioagent.make_cljson(agents)
+
+def _get_agent_from_gene_name(gene_name):
+    db_refs = {}
+    hgnc_id = hgnc_client.get_hgnc_id(gene_name)
+
+
+    if hgnc_id:
+        db_refs['HGNC'] = hgnc_id
+
+        uniprot_id = hgnc_client.get_uniprot_id(hgnc_id)
+        if uniprot_id:
+            db_refs['UP'] = uniprot_id
+
+    agent = Agent(gene_name, db_refs=db_refs)
+    return agent
 
 
 
