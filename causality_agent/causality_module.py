@@ -232,10 +232,6 @@ class CausalityModule(Bioagent):
         if not gene_names:
             return self.make_failure('MISSING_MECHANISM')
 
-        # gene_list = []
-        # for gene_name in gene_names:
-        #     gene_list.append(str(gene_name))
-
         result = self.CA.find_common_upstreams(gene_names)
 
         if not result:
@@ -375,11 +371,7 @@ class CausalityModule(Bioagent):
         if not gene_names:
             return self.make_failure('MISSING_MECHANISM')
 
-        # gene_list = []
-        # for gene_name in gene_names:
-        #     gene_list.append(str(gene_name))
-
-        # result = self.CA.find_most_likely_cellular_location(gene_names)
+        result = self.CA.find_most_likely_cellular_location(gene_names)
 
         if not result:
             return self.make_failure('NO_COMMON_CELLULAR_LOCATION_FOUND')
